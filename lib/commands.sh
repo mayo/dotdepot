@@ -53,17 +53,22 @@ cmd_link_MODE_PROMPT=0
 cmd_link_MODE_FORCE=1
 cmd_link_MODE_SKIP=2
 
+dry_run=0
+
 cmd_link() {
   # mode can be prompt (0), force (1), or skip (2)
-  mode=$cmd_link_MODE_PROMPT;
+  cmd_link_mode=$cmd_link_MODE_PROMPT;
 
-  while getopts fi OPT; do
+  while getopts fid OPT; do
     case "$OPT" in
       f)
-        mode=$cmd_link_MODE_FORCE
+        cmd_link_mode=$cmd_link_MODE_FORCE
         ;;
       i)
-        mode=$cmd_link_MODE_SKIP
+        cmd_link_mode=$cmd_link_MODE_SKIP
+        ;;
+      d)
+        dry_run=1
         ;;
       \?)
         echo "invalid argument"
@@ -71,11 +76,11 @@ cmd_link() {
     esac
   done
 
-  link_files $SOURCE_DIR $TARGET_DIR $mode
+  link_files $SOURCE_DIR $TARGET_DIR $cmd_link_mode
 }
 
 cmd_link_usage() {
-  echo "$0 [options] link [-f|i]"
+  echo "$0 [options] link [-f|i] [-d]"
 }
 
 cmd_link_description="
@@ -86,51 +91,88 @@ action. This can be overriden with:
 
 -f    If file in target directory exists, overwrite it
 -i    If file in target directory exists, ignore (skip) it
+
+-d    Dry run. Show actions, but don't execute them
 "
 
 link_files() {
-  src=$1
-  dst=$2
-  mode=$3
+  local src=$1
+  local dst=$2
+  local mode=$3
   maxargs 'link_files' 3 "$@" || return 1
-  echo $@
 
-  cd $src || exit 1
-  cwd=$(pwd)
-  
+  # Holds user input
+  local user_in=""
+
+  # Open a new file descriptor for user input
+  exec 3<&0
 
   while read file; do
-    filename=$(basename $file)
+    local filename=$(basename $file)
+    local removed=0
 
     echo "$dst/$filename"
 
     if [ -d $dst/$filename ]; then
-      if [ $mode -eq $cmd_link_MODE_FORCE ]; then
-        rm -rf $dst/$filename
+      local cmd="${RM} -rf $dst/$filename"
+      local confirm=0
+
+      if [ $mode -ne $cmd_link_MODE_FORCE ]; then
+        ${ECHO} -n "Is a directory. Remove? [y/n]: "
+        read user_in <&3
+
+        case "${user_in}" in
+          [Yy]) confirm=1 ;;
+          *) echo "Skipping removal of $dst/$filename directory"; continue ;;
+        esac
       else
-        echo "$dst/$filename is a directory. Remove?"
+        confirm=1
       fi
+
+      if [ $confirm -eq 1 ]; then
+        removed=1
+        if [ $dry_run -eq 1 ]; then
+          echo $cmd
+        else
+          $cmd
+        fi
+      fi
+
     fi
 
-    if [ -L $dst/$filename ] || [ -e $dst/$filename ]; then
+    local ln_opts="-sh"
+
+    if [ -L $dst/$filename ] || [ -e $dst/$filename ] && [ $removed -eq 0 ]; then
 
       if [ $mode -eq $cmd_link_MODE_SKIP ]; then
-        echo "skipping file $filename, because it exists"
+        echo "Skipping file $filename, because it exists"
+        continue
 
       elif [ $mode -eq $cmd_link_MODE_FORCE ]; then
-        ln -sfFh $cwd/$file $dst/$filename
+        ln_opts="${ln_opts}fF"
 
       else
-        echo "file exists, overwrite or skip?"
+        ${ECHO} -n "File exists, overwrite? [y/n]: "
+        read user_in <&3
+
+        case "${user_in}" in
+          [Yy]) ln_opts="${ln_opts}fF" ;;
+          *) echo "Skipping $dst/$filename"; continue ;;
+        esac
       fi
 
+    fi
+
+    local cmd="${LN} $ln_opts $file $dst/$filename"
+
+    if [ $dry_run -eq 1 ]; then
+      echo $cmd
     else
-echo "friendly ln"
-      ln -sh $cwd/$file $dst/$filename
+      $cmd
     fi
 
   done <<- EOF
-    $(find . -mindepth 1 -maxdepth 1)
+    $(${FIND} ${src} -mindepth 1 -maxdepth 1)
 EOF
 
   return 0

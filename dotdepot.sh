@@ -2,6 +2,16 @@
 
 SCRIPT_BASE=$(dirname $0)
 
+# System commands used throughout the scripts
+LN="/bin/ln"
+ECHO="/bin/echo"
+RM="/bin/rm"
+FIND="/usr/bin/find"
+
+# Script Working Directory. Used to determine absolute paths to source and target.
+# This should never be modified throughout the script
+SWD=$(pwd)
+
 # Holds all supported commands, separated by space
 COMMANDS=""
 
@@ -48,6 +58,17 @@ main() {
         ;;
     esac
   done
+
+  SOURCE_DIR=$(resolve_path $SOURCE_DIR)
+  if [ $? -eq 1 ]; then
+    echo "Invalid directory: $SOURCE_DIR"
+  fi
+
+  TARGET_DIR=$(resolve_path $TARGET_DIR)
+  if [ $? -eq 1 ]; then
+    echo "Invalid directory: $TARGET_DIR" >&2
+    exit 1
+  fi
 
   # Remove the switches we parsed above.
   shift `expr $OPTIND - 1`
