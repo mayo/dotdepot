@@ -25,15 +25,6 @@ usage() {
 }
 
 main() {
-#  while [ $# -gt 0 ]; do
-#    case "$1" in
-#      -l | --build-lib ) BUILD_LIB=tru ;;
-#      --xcode-dev-path ) XCODE_DEV_PATH=${2%/}; shift ;;
-#      -h | --help ) usage;;
-#      * ) usage ;;
-#    esac
-#    shift
-#  done 
 
   while getopts hvs:t: OPT; do
     case "$OPT" in
