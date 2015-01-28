@@ -6,7 +6,7 @@
 # COMMAND: help
 ##
 
-COMMANDS+=" help"
+COMMANDS="$COMMANDS help"
 
 cmd_help() {
 
@@ -46,7 +46,7 @@ cmd_help_description="Help"
 # take user's home (target) dir as parameter, default to ~
 # take template (source) directory as parameter
 
-COMMANDS+=" link"
+COMMANDS="$COMMANDS link"
 
 
 cmd_link_MODE_PROMPT=0
@@ -95,30 +95,44 @@ link_files() {
   maxargs 'link_files' 3 "$@" || return 1
   echo $@
 
+  cd $src || exit 1
+  cwd=$(pwd)
+  
+
   while read file; do
     filename=$(basename $file)
 
-    if [ -f $dst/$filename ] || [ -d $dst/$filename ]; then
-      echo "$dst/$filename"
+    echo "$dst/$filename"
+
+    if [ -d $dst/$filename ]; then
+      if [ $mode -eq $cmd_link_MODE_FORCE ]; then
+        rm -rf $dst/$filename
+      else
+        echo "$dst/$filename is a directory. Remove?"
+      fi
+    fi
+
+    if [ -L $dst/$filename ] || [ -e $dst/$filename ]; then
 
       if [ $mode -eq $cmd_link_MODE_SKIP ]; then
         echo "skipping file $filename, because it exists"
 
       elif [ $mode -eq $cmd_link_MODE_FORCE ]; then
-        ln -sfFh $file $dst/$filename
+        ln -sfFh $cwd/$file $dst/$filename
 
       else
         echo "file exists, overwrite or skip?"
       fi
 
     else
-      ln -sh $file $dst/$filename
+echo "friendly ln"
+      ln -sh $cwd/$file $dst/$filename
     fi
 
   done <<- EOF
-    $(find $src -mindepth 1 -maxdepth 1)
+    $(find . -mindepth 1 -maxdepth 1)
 EOF
-  
+
   return 0
 }
 
