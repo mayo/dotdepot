@@ -1,6 +1,7 @@
 #!/bin/sh
 
 SCRIPT_BASE=$(dirname $0)
+SCRIPT_NAME=$(basename $0)
 
 # System commands used throughout the scripts
 LN="/bin/ln"
@@ -16,31 +17,31 @@ SWD=$(pwd)
 COMMANDS=""
 
 # Load supported commands
-. $SCRIPT_BASE/lib/common.sh
-. $SCRIPT_BASE/lib/commands.sh
+. ${SCRIPT_BASE}/lib/common.sh
+. ${SCRIPT_BASE}/lib/commands.sh
 
 usage() {
-  USAGE="Usage: `basename $0` [-hv] [-s source] [-t target] command"
-  echo $USAGE
+  USAGE="Usage: ${SCRIPT_NAME} [-hv] [-s source] [-t target] command"
+  echo ${USAGE}
 }
 
 main() {
 
   while getopts hvs:t: OPT; do
-    case "$OPT" in
+    case "${OPT}" in
       h)
         usage
         exit 0
         ;;
       v)
-        echo `basename $0`
+        echo ${SCRIPT_NAME}
         exit 0
         ;;
       s)
-        SOURCE_DIR=$OPTARG
+        SOURCE_DIR=${OPTARG}
         ;;
       t)
-        TARGET_DIR=$OPTARG
+        TARGET_DIR=${OPTARG}
         ;;
       \?)
         echo "Invalid argument" >&2
@@ -50,19 +51,19 @@ main() {
     esac
   done
 
-  SOURCE_DIR=$(resolve_path $SOURCE_DIR)
+  SOURCE_DIR=$(resolve_path ${SOURCE_DIR})
   if [ $? -eq 1 ]; then
-    echo "Invalid directory: $SOURCE_DIR"
+    echo "Invalid directory: ${SOURCE_DIR}"
   fi
 
-  TARGET_DIR=$(resolve_path $TARGET_DIR)
+  TARGET_DIR=$(resolve_path ${TARGET_DIR})
   if [ $? -eq 1 ]; then
-    echo "Invalid directory: $TARGET_DIR" >&2
+    echo "Invalid directory: ${TARGET_DIR}" >&2
     exit 1
   fi
 
   # Remove the switches we parsed above.
-  shift `expr $OPTIND - 1`
+  shift `expr ${OPTIND} - 1`
 
   # Get the non-option command argument
   if [ $# -eq 0 ]; then
@@ -102,17 +103,17 @@ list_commands() {
   echo "Available commands are:"
   echo
 
-  for cmd in $COMMANDS; do
+  for cmd in ${COMMANDS}; do
     eval description=\${"cmd_${cmd}_description"}
 
     usage_cmd=cmd_${cmd}_usage
-    usage=$($usage_cmd)
+    usage=$(${usage_cmd})
 
-    echo "$cmd: $usage"
+    echo "${cmd}: ${usage}"
     echo "${description}"
     echo
   done
 }
 
-main "${@}" || exit 1
+main "$@" || exit 1
 

@@ -6,7 +6,7 @@
 # COMMAND: help
 ##
 
-COMMANDS="$COMMANDS help"
+COMMANDS="${COMMANDS} help"
 
 cmd_help() {
 
@@ -22,8 +22,8 @@ cmd_help() {
   type "cmd_${cmd}_usage" 1>/dev/null 2>&1
 
   if [ $? -ne 0 ]; then
-    echo "unknown command: $cmd"
-    echo "available commands: $COMMANDS"
+    echo "unknown command: ${cmd}"
+    echo "available commands: ${COMMANDS}"
     exit 1;
   fi;
 
@@ -46,29 +46,29 @@ cmd_help_description="Help"
 # take user's home (target) dir as parameter, default to ~
 # take template (source) directory as parameter
 
-COMMANDS="$COMMANDS link"
+COMMANDS="${COMMANDS} link"
 
 
 cmd_link_MODE_PROMPT=0
 cmd_link_MODE_FORCE=1
 cmd_link_MODE_SKIP=2
 
-dry_run=0
+RUN_OR_DRY=
 
 cmd_link() {
   # mode can be prompt (0), force (1), or skip (2)
-  cmd_link_mode=$cmd_link_MODE_PROMPT;
+  cmd_link_mode=${cmd_link_MODE_PROMPT};
 
   while getopts fid OPT; do
-    case "$OPT" in
+    case "${OPT}" in
       f)
-        cmd_link_mode=$cmd_link_MODE_FORCE
+        cmd_link_mode=${cmd_link_MODE_FORCE}
         ;;
       i)
-        cmd_link_mode=$cmd_link_MODE_SKIP
+        cmd_link_mode=${cmd_link_MODE_SKIP}
         ;;
       d)
-        dry_run=1
+        RUN_OR_DRY=echo
         ;;
       \?)
         echo "invalid argument"
@@ -76,7 +76,7 @@ cmd_link() {
     esac
   done
 
-  link_files $SOURCE_DIR $TARGET_DIR $cmd_link_mode
+  link_files "${SOURCE_DIR}" "${TARGET_DIR}" ${cmd_link_mode}
 }
 
 cmd_link_usage() {
@@ -108,47 +108,43 @@ link_files() {
   exec 3<&0
 
   while read file; do
-    local filename=$(basename $file)
+    local filename=$(basename ${file})
     local removed=0
+    local target="${dst}/${filename}"
 
-    echo "$dst/$filename"
+    echo ${target}
 
-    if [ -d $dst/$filename ]; then
-      local cmd="${RM} -rf $dst/$filename"
+    if [ -d "${target}" ]; then
       local confirm=0
 
-      if [ $mode -ne $cmd_link_MODE_FORCE ]; then
+      if [ ${mode} -ne ${cmd_link_MODE_FORCE} ]; then
         ${ECHO} -n "Is a directory. Remove? [y/n]: "
         read user_in <&3
 
         case "${user_in}" in
           [Yy]) confirm=1 ;;
-          *) echo "Skipping removal of $dst/$filename directory"; continue ;;
+          *) echo "Skipping removal of ${target} directory"; continue ;;
         esac
       else
         confirm=1
       fi
 
-      if [ $confirm -eq 1 ]; then
+      if [ ${confirm} -eq 1 ]; then
         removed=1
-        if [ $dry_run -eq 1 ]; then
-          echo $cmd
-        else
-          $cmd
-        fi
+        ${RUN_OR_DRY} ${RM} -rf "${target}"
       fi
 
     fi
 
     local ln_opts="-sh"
 
-    if [ -L $dst/$filename ] || [ -e $dst/$filename ] && [ $removed -eq 0 ]; then
+    if [ -L "${target}" ] || [ -e "${target}" ] && [ ${removed} -eq 0 ]; then
 
-      if [ $mode -eq $cmd_link_MODE_SKIP ]; then
-        echo "Skipping file $filename, because it exists"
+      if [ ${mode} -eq ${cmd_link_MODE_SKIP} ]; then
+        echo "Skipping file ${filename}, because it exists"
         continue
 
-      elif [ $mode -eq $cmd_link_MODE_FORCE ]; then
+      elif [ ${mode} -eq ${cmd_link_MODE_FORCE} ]; then
         ln_opts="${ln_opts}fF"
 
       else
@@ -157,22 +153,16 @@ link_files() {
 
         case "${user_in}" in
           [Yy]) ln_opts="${ln_opts}fF" ;;
-          *) echo "Skipping $dst/$filename"; continue ;;
+          *) echo "Skipping ${target}"; continue ;;
         esac
       fi
 
     fi
 
-    local cmd="${LN} $ln_opts $file $dst/$filename"
-
-    if [ $dry_run -eq 1 ]; then
-      echo $cmd
-    else
-      $cmd
-    fi
+    ${RUN_OR_DRY} ${LN} ${ln_opts} "$file" "${target}"
 
   done <<- EOF
-    $(${FIND} ${src} -mindepth 1 -maxdepth 1)
+    $(${FIND} "${src}" -mindepth 1 -maxdepth 1)
 EOF
 
   return 0
