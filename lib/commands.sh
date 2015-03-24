@@ -100,6 +100,8 @@ link_files() {
   local dst=$2
   local mode=$3
   maxargs 'link_files' 3 "$@" || return 1
+  argisset 'link_files' 1 "src" "$src" || return 1
+  argisset 'link_files' 2 "dst" "$dst" || return 1
 
   # Holds user input
   local user_in=""

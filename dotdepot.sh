@@ -54,12 +54,17 @@ main() {
   SOURCE_DIR=$(resolve_path ${SOURCE_DIR})
   if [ $? -eq 1 ]; then
     echo "Invalid directory: ${SOURCE_DIR}"
+    exit 1
   fi
 
   TARGET_DIR=$(resolve_path ${TARGET_DIR})
   if [ $? -eq 1 ]; then
     echo "Invalid directory: ${TARGET_DIR}" >&2
     exit 1
+  fi
+
+  if [ -z ${TARGET_DIR} ]; then
+    TARGET_DIR=$HOME
   fi
 
   # Remove the switches we parsed above.
