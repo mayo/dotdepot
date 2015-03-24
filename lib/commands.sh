@@ -138,7 +138,13 @@ link_files() {
 
     fi
 
-    local ln_opts="-sh"
+    local ln_opts="-s"
+
+    if [ "${PLATFORM}" = "Linux" ]; then
+      ln_opts="${ln_opts}n"
+    else
+      ln_opts="${ln_opts}h"
+    fi
 
     if [ -L "${target}" ] || [ -e "${target}" ] && [ ${removed} -eq 0 ]; then
 

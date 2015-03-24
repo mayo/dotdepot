@@ -9,6 +9,8 @@ ECHO="/bin/echo"
 RM="/bin/rm"
 FIND="/usr/bin/find"
 
+PLATFORM=$(uname)
+
 # Script Working Directory. Used to determine absolute paths to source and target.
 # This should never be modified throughout the script
 SWD=$(pwd)
