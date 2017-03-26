@@ -7,9 +7,12 @@ Please note that this script does not execute any of the files contained in the 
 ## TODO
 
 - installation notes (standalone or submodule in dotfiles)
-- bootstrapping
-- unlink files no longer in repo? (or detect removal, offer to keep old copy?)
+- **bootstrap**: provide git repo. if git command is present, clone, and link. if github, and git not present, get the zip file and use that
+- **unlink**: files no longer in repo? (or detect removal, offer to keep old copy?)
+- **unlink**: home dir
 - backup option when overwriting/removing directories
 - diff/patch
-- unlink home dir
+- **update**: if git repo, pull, and add/remove what's missing from home. If not repo, but using github, grab zip and do the same. Option for not pulling
+- **addfile**: add file to repo into topic, create a symlink in skel, link from home to skel. ignore source file path, take only file itself
+- .dotdeporc to keep track of repos and sources?
 
