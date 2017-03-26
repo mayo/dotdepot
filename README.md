@@ -4,6 +4,14 @@ The intention is not to have things work magically, but pragmatically. I liked t
 
 Please note that this script does not execute any of the files contained in the source directory. The files in your home directory will be symlinked to files in the source directory.
 
+## Installation
+
+## Usage
+
+```
+./dotdepot.sh -s ~/path/to/dotfiles/repository -t ~ link
+```
+
 ## TODO
 
 - installation notes (standalone or submodule in dotfiles)
@@ -11,5 +19,6 @@ Please note that this script does not execute any of the files contained in the 
 - unlink files no longer in repo? (or detect removal, offer to keep old copy?)
 - backup option when overwriting/removing directories
 - diff/patch
-- unlink home dir
-
+- unlink home dir (stop using repo)
+- repository (-r) option to work with patches+local changes
+- multiple repositories + repository management
