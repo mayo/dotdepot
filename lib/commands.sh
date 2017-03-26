@@ -111,57 +111,11 @@ link_files() {
 
   while read file; do
     local filename=$(basename ${file})
-    local removed=0
     local target="${dst}/${filename}"
 
     echo ${target}
 
-    if [ -d "${target}" ]; then
-      local confirm=0
-
-      if [ ${mode} -ne ${cmd_link_MODE_FORCE} ]; then
-        ${ECHO} -n "Is a directory. Remove? [y/n]: "
-        read user_in <&3
-
-        case "${user_in}" in
-          [Yy]) confirm=1 ;;
-          *) echo "Skipping removal of ${target} directory"; continue ;;
-        esac
-      else
-        confirm=1
-      fi
-
-      if [ ${confirm} -eq 1 ]; then
-        removed=1
-        ${RUN_OR_DRY} ${RM} -rf "${target}"
-      fi
-
-    fi
-
-    local ln_opts="-sh"
-
-    if [ -L "${target}" ] || [ -e "${target}" ] && [ ${removed} -eq 0 ]; then
-
-      if [ ${mode} -eq ${cmd_link_MODE_SKIP} ]; then
-        echo "Skipping file ${filename}, because it exists"
-        continue
-
-      elif [ ${mode} -eq ${cmd_link_MODE_FORCE} ]; then
-        ln_opts="${ln_opts}fF"
-
-      else
-        ${ECHO} -n "File exists, overwrite? [y/n]: "
-        read user_in <&3
-
-        case "${user_in}" in
-          [Yy]) ln_opts="${ln_opts}fF" ;;
-          *) echo "Skipping ${target}"; continue ;;
-        esac
-      fi
-
-    fi
-
-    ${RUN_OR_DRY} ${LN} ${ln_opts} "$file" "${target}"
+    link_file "$filename" "$target"
 
   done <<- EOF
     $(${FIND} "${src}" -mindepth 1 -maxdepth 1)
@@ -169,5 +123,103 @@ EOF
 
   return 0
 }
+
+link_file() {
+  local filename="$1"
+  local target="$2"
+  local removed=0
+
+  maxargs 'link_file' 2 "$@" || return 1
+  argisset 'link_file' 1 "filename" "$filename" || return 1
+  argisset 'link_file' 2 "target" "$target" || return 1
+
+  if [ -d "${target}" ]; then
+    local confirm=0
+
+    if [ ${mode} -ne ${cmd_link_MODE_FORCE} ]; then
+      ${ECHO} -n "Is a directory. Remove? [y/n]: "
+      read user_in <&3
+
+      case "${user_in}" in
+        [Yy]) confirm=1 ;;
+        *) echo "Skipping removal of ${target} directory"; continue ;;
+      esac
+    else
+      confirm=1
+    fi
+
+    if [ ${confirm} -eq 1 ]; then
+      removed=1
+      ${RUN_OR_DRY} ${RM} -rf "${target}"
+    fi
+
+  fi
+
+  local ln_opts="-sh"
+
+  if [ -L "${target}" ] || [ -e "${target}" ] && [ ${removed} -eq 0 ]; then
+
+    if [ ${mode} -eq ${cmd_link_MODE_SKIP} ]; then
+      echo "Skipping file ${filename}, because it exists"
+      continue
+
+    elif [ ${mode} -eq ${cmd_link_MODE_FORCE} ]; then
+      ln_opts="${ln_opts}fF"
+
+    else
+      ${ECHO} -n "File exists, overwrite? [y/n]: "
+      read user_in <&3
+
+      case "${user_in}" in
+        [Yy]) ln_opts="${ln_opts}fF" ;;
+        *) echo "Skipping ${target}"; continue ;;
+      esac
+    fi
+
+  fi
+
+  ${RUN_OR_DRY} ${LN} ${ln_opts} "$file" "${target}"
+}
+
+####
+# COMMAND: addfile
+##
+
+COMMANDS="${COMMANDS} addfile"
+
+cmd_addfile() {
+
+  if [ $# -eq 0 ]; then
+    cmd_addfile_usage
+
+    list_commands
+    exit 0
+  fi
+
+  cmd=$1; shift
+
+  type "cmd_${cmd}_usage" 1>/dev/null 2>&1
+
+  if [ $? -ne 0 ]; then
+    echo "unknown command: ${cmd}"
+    echo "available commands: ${COMMANDS}"
+    exit 1;
+  fi;
+
+  cmd_${cmd}_usage
+  exit 0;
+}
+
+cmd_help_usage() {
+  echo "$0 [options] addfile -t topic filename [filename, ...]"
+}
+
+cmd_addfile_description="
+Add a new file(s) into the repository repository.
+
+The file will be copied from the given location (without preserving the directory
+path) to the specified topic in the repository.
+"
+
 
 
