@@ -12,6 +12,22 @@ maxargs() {
 	fi
 }
 
+argisset() {
+  local loc
+  local arg
+  local fname
+  local value
+  loc="$1"
+  arg="$2"
+  fname="$3"
+  value="$4"
+  maxargs "argisset" 4 "$@" || return 1
+  if [ -z "${value}" ]; then
+    echo "ERROR: ${loc} argument $arg ($fname) is required."
+    return 1
+  fi
+}
+
 # Tests if give path starts with /.
 is_absolute_path() {
   path=$1
@@ -27,6 +43,10 @@ is_absolute_path() {
 resolve_path() {
   path="$1"
   maxargs "resolve_path" 1 "$@" || return 1
+
+  if [ -z "${path}" ]; then
+    return 0
+  fi
 
   absolute=$(is_absolute_path ${path})
   test_path="${SWD}/${path}"

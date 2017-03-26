@@ -9,6 +9,8 @@ ECHO="/bin/echo"
 RM="/bin/rm"
 FIND="/usr/bin/find"
 
+PLATFORM=$(uname)
+
 # Script Working Directory. Used to determine absolute paths to source and target.
 # This should never be modified throughout the script
 SWD=$(pwd)
@@ -54,12 +56,17 @@ main() {
   SOURCE_DIR=$(resolve_path ${SOURCE_DIR})
   if [ $? -eq 1 ]; then
     echo "Invalid directory: ${SOURCE_DIR}"
+    exit 1
   fi
 
   TARGET_DIR=$(resolve_path ${TARGET_DIR})
   if [ $? -eq 1 ]; then
     echo "Invalid directory: ${TARGET_DIR}" >&2
     exit 1
+  fi
+
+  if [ -z ${TARGET_DIR} ]; then
+    TARGET_DIR=$HOME
   fi
 
   # Remove the switches we parsed above.
