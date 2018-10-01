@@ -115,7 +115,7 @@ link_files() {
 
     echo ${target}
 
-    link_file "$filename" "$target"
+    link_file "$filename" "$target" "${mode}"
 
   done <<- EOF
     $(${FIND} "${src}" -mindepth 1 -maxdepth 1)
@@ -127,9 +127,10 @@ EOF
 link_file() {
   local filename="$1"
   local target="$2"
+  local mode=$3
   local removed=0
 
-  maxargs 'link_file' 2 "$@" || return 1
+  maxargs 'link_file' 3 "$@" || return 1
   argisset 'link_file' 1 "filename" "$filename" || return 1
   argisset 'link_file' 2 "target" "$target" || return 1
 
@@ -152,7 +153,6 @@ link_file() {
       removed=1
       ${RUN_OR_DRY} ${RM} -rf "${target}"
     fi
-
   fi
 
   local ln_opts="-s"
@@ -216,7 +216,7 @@ cmd_addfile() {
   exit 0;
 }
 
-cmd_help_usage() {
+cmd_addfile_usage() {
   echo "$0 [options] addfile -t topic filename [filename, ...]"
 }
 
